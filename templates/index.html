@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script type="text/javascript">
+        var socket = io();
+
+        function sendMessage() {
+            var message = document.getElementById("message").value;
+            socket.emit('message', {'message': message});
+            document.getElementById("message").value = '';
+        }
+
+        socket.on('response', function(data) {
+            var response = data['response'];
+            var conversation = document.getElementById("conversation");
+            conversation.innerHTML += '<div><b>你:</b> ' + message + '</div>';
+            conversation.innerHTML += '<div><b>机器人:</b> ' + response + '</div>';
+        });
+    </script>
+</head>
+<body>
+    <div id="conversation" style="height: 300px; overflow-y: scroll;"></div>
+    <input type="text" id="message">
+    <button onclick="sendMessage()">发送</button>
+</body>
+</html>
