@@ -42,12 +42,22 @@ def process_message(message, ip_address):
 	            }
 	        ],
 	        model="gpt-3.5-turbo", #此处更换其它模型,请参考模型列表 eg: google/gemma-7b-it
+            stream=True,
 	    )
 
+    # 逐步产生响应并通过Socket.IO发送给客户端
+    response = ""
+    for chunk in chat_completion:
+        response_part = chunk.choices[0].delta.content or ""
+        emit('response', {'response': response_part})
+        response += response_part
+
+        print(chunk.choices[0].delta.content or "", end="")
 
     print(ip_address+"::question:"+prompt)
-    print(ip_address+ "::answer:"+chat_completion.choices[0].message.content)
-    return chat_completion.choices[0].message.content
+    print(ip_address+ "::answer:"+response)
+
+    return response
 
 @socketio.on('message')
 def handle_message(data):

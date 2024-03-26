@@ -2,27 +2,92 @@
 <html>
 <head>
     <title>Chatbot</title>
+    <style>
+        #container {
+            display: flex;
+        }
+        #left-column {
+            flex: 1;
+            padding-right: 20px;
+        }
+        #right-column {
+            flex: 2;
+        }
+        #conversation {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+        #message {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .human {
+            color: blue;
+        }
+        .ai {
+            color: green;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <script type="text/javascript">
         var socket = io();
+        var currentResponse = ''; // 用于拼接流式回答
 
         function sendMessage() {
             var message = document.getElementById("message").value;
+            if (message.trim() === '') {
+                return; // 忽略空消息
+            }
             socket.emit('message', {'message': message});
+            appendMessage('你', message, 'human');
             document.getElementById("message").value = '';
+            currentResponse = ''; // 清空当前回答
+        }
+
+        function appendMessage(sender, message, className) {
+            var conversation = document.getElementById("conversation");
+            conversation.innerHTML += '<div class="' + className + '"><b>' + sender + ':</b> ' + message + '</div>';
+            conversation.scrollTop = conversation.scrollHeight; // 滚动到底部
         }
 
         socket.on('response', function(data) {
             var response = data['response'];
+            currentResponse += response; // 拼接流式回答
+            // 更新最后一条机器人的回答
             var conversation = document.getElementById("conversation");
-            conversation.innerHTML += '<div><b>你:</b> ' + message + '</div>';
-            conversation.innerHTML += '<div><b>机器人:</b> ' + response + '</div>';
+            var lastChild = conversation.lastChild;
+            if (lastChild && lastChild.className === 'ai') {
+                lastChild.innerHTML = '<b>机器人:</b> ' + currentResponse;
+            } else {
+                appendMessage('机器人', currentResponse, 'ai');
+            }
         });
+
+        // 监听回车键
+        document.getElementById("message").addEventListener("keydown", function(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault(); // 阻止默认行为（换行）
+                sendMessage();
+            }
+
+});
+
+
     </script>
 </head>
 <body>
-    <div id="conversation" style="height: 300px; overflow-y: scroll;"></div>
-    <input type="text" id="message">
-    <button onclick="sendMessage()">发送</button>
+    <div id="container">
+        <div id="left-column">
+            <textarea id="message" rows="3" placeholder="输入消息..."></textarea>
+            <button onclick="sendMessage()">发送</button>
+        </div>
+        <div id="right-column">
+            <div id="conversation"></div>
+        </div>
+    </div>
 </body>
 </html>
