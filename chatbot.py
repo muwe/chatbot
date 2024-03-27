@@ -75,7 +75,7 @@ def handle_message(data):
     contexts[ip_address] = context[-3:]
 
     # 向客户端发送响应
-    emit('response', {'response': response})
+#    emit('response', {'response': response})
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
