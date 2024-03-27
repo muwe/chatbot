@@ -27,9 +27,9 @@ lock = threading.Lock()
 def index():
     return render_template('index.html')
 
-def process_message(message, ip_address):
+def process_message(message, session_id):
     # 获取当前会话的上下文
-    context = contexts.get(ip_address, [])
+    context = contexts.get(session_id, [])
     prompt = '\n'.join([f"Human: {m}\nAI: {r}" for m, r in context]) + f"\nHuman: {message}\nAI:"
 
     # 使用锁确保 GPT 接口的线性调用
@@ -54,25 +54,25 @@ def process_message(message, ip_address):
 
         print(chunk.choices[0].delta.content or "", end="")
 
-    print(ip_address+"::question:"+prompt)
-    print(ip_address+ "::answer:"+response)
+    print(session_id+"::question:"+prompt)
+    print(session_id+ "::answer:"+response)
 
     return response
 
 @socketio.on('message')
 def handle_message(data):
-    ip_address = request.remote_addr
+    session_id = request.sid
     message = data['message']
 
     # 获取当前会话的上下文
-    context = contexts.get(ip_address, [])
+    context = contexts.get(session_id, [])
 
     # 处理消息并生成响应
-    response = process_message(message, ip_address)
+    response = process_message(message, session_id)
 
     # 更新上下文，保持最多6轮对话
     context.append((message, response))
-    contexts[ip_address] = context[-3:]
+    contexts[session_id] = context[-3:]
 
     # 向客户端发送响应
 #    emit('response', {'response': response})
